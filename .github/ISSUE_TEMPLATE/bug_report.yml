@@ -1,0 +1,34 @@
+name: Bug report
+description: Report a problem with the Yongnuo YN360 integration
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: Describe the bug and what you expected instead.
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: Home Assistant, Yongnuo YN360 integration, and yn360-ble library.
+      placeholder: "HA 2026.5, integration 0.1.0, yn360-ble 0.1.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: connection
+    attributes:
+      label: How is the light reached?
+      options:
+        - "Bluetooth adapter on the HA host"
+        - "ESPHome Bluetooth proxy"
+        - "Not sure"
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      render: text
