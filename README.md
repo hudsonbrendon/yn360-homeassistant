@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/yongnuo-logo.png" alt="Yongnuo" width="420">
+</p>
+
 # Yongnuo YN360 for Home Assistant
 
 [![Tests](https://github.com/hudsonbrendon/yn360-homeassistant/actions/workflows/test.yml/badge.svg)](https://github.com/hudsonbrendon/yn360-homeassistant/actions/workflows/test.yml)
