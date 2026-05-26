@@ -1,0 +1,14 @@
+{
+  "domain": "yongnuo_yn360",
+  "name": "Yongnuo YN360",
+  "bluetooth": [{ "local_name": "YN360*" }],
+  "codeowners": ["@hudsonbrendon"],
+  "config_flow": true,
+  "dependencies": ["bluetooth_adapters"],
+  "documentation": "https://github.com/hudsonbrendon/yn360-homeassistant",
+  "integration_type": "device",
+  "iot_class": "assumed_state",
+  "issue_tracker": "https://github.com/hudsonbrendon/yn360-homeassistant/issues",
+  "requirements": ["yn360-ble==0.1.0"],
+  "version": "0.1.0"
+}

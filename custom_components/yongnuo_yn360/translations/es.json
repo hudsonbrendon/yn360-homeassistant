@@ -1,0 +1,18 @@
+{
+  "config": {
+    "flow_title": "{name}",
+    "step": {
+      "bluetooth_confirm": {
+        "description": "¿Quieres configurar {name}?"
+      },
+      "user": {
+        "data": { "address": "Dispositivo" }
+      }
+    },
+    "abort": {
+      "not_supported": "Este dispositivo no es un Yongnuo YN360.",
+      "no_devices_found": "No se encontraron dispositivos Yongnuo YN360.",
+      "already_configured": "El dispositivo ya está configurado."
+    }
+  }
+}
