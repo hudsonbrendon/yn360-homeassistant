@@ -22,7 +22,9 @@ test = [
     "yn360-ble==0.1.0",
     "pytest>=8.0",
     "pytest-asyncio>=0.23",
-    "pytest-homeassistant-custom-component>=0.13",
+    # Pinned: this version transitively pins Home Assistant (2026.2.x), keeping
+    # CI in lockstep with the HA internals the bluetooth/usb test fixtures patch.
+    "pytest-homeassistant-custom-component==0.13.316",
     # Pulled in transitively by Home Assistant's bluetooth stack on Linux, but
     # required explicitly to run the HA bluetooth integration under tests on macOS.
     "pyserial>=3.5",
