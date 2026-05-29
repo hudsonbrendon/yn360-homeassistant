@@ -8,12 +8,26 @@ from homeassistant.components.bluetooth import (
     BluetoothServiceInfoBleak,
     async_discovered_service_info,
 )
-from homeassistant.config_entries import ConfigFlow, ConfigFlowResult
+from homeassistant.config_entries import (
+    ConfigEntry,
+    ConfigFlow,
+    ConfigFlowResult,
+    OptionsFlow,
+)
+from homeassistant.core import callback
 import voluptuous as vol
 
 from yn360.const import DEVICE_NAME_PREFIX, SERVICE_UUID
 
-from .const import DOMAIN
+from .const import (
+    CONF_MAX_KELVIN,
+    CONF_MIN_KELVIN,
+    CONF_PERSISTENT_CONNECTION,
+    DEFAULT_MAX_KELVIN,
+    DEFAULT_MIN_KELVIN,
+    DEFAULT_PERSISTENT_CONNECTION,
+    DOMAIN,
+)
 
 
 def _supports(info: BluetoothServiceInfoBleak) -> bool:
@@ -29,6 +43,12 @@ class YN360ConfigFlow(ConfigFlow, domain=DOMAIN):
     def __init__(self) -> None:
         self._discovery: BluetoothServiceInfoBleak | None = None
         self._discovered: dict[str, BluetoothServiceInfoBleak] = {}
+
+    @staticmethod
+    @callback
+    def async_get_options_flow(config_entry: ConfigEntry) -> YN360OptionsFlow:
+        """Return the options flow handler."""
+        return YN360OptionsFlow()
 
     async def async_step_bluetooth(
         self, discovery_info: BluetoothServiceInfoBleak
@@ -85,4 +105,43 @@ class YN360ConfigFlow(ConfigFlow, domain=DOMAIN):
                     )
                 }
             ),
+        )
+
+
+class YN360OptionsFlow(OptionsFlow):
+    """Handle YN360 options: connection behaviour and colour-temperature range."""
+
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Manage the options."""
+        errors: dict[str, str] = {}
+        options = self.config_entry.options
+
+        if user_input is not None:
+            if user_input[CONF_MIN_KELVIN] >= user_input[CONF_MAX_KELVIN]:
+                errors["base"] = "invalid_kelvin_range"
+            else:
+                return self.async_create_entry(title="", data=user_input)
+
+        schema = vol.Schema(
+            {
+                vol.Required(
+                    CONF_PERSISTENT_CONNECTION,
+                    default=options.get(
+                        CONF_PERSISTENT_CONNECTION, DEFAULT_PERSISTENT_CONNECTION
+                    ),
+                ): bool,
+                vol.Required(
+                    CONF_MIN_KELVIN,
+                    default=options.get(CONF_MIN_KELVIN, DEFAULT_MIN_KELVIN),
+                ): vol.All(vol.Coerce(int), vol.Range(min=1000, max=10000)),
+                vol.Required(
+                    CONF_MAX_KELVIN,
+                    default=options.get(CONF_MAX_KELVIN, DEFAULT_MAX_KELVIN),
+                ): vol.All(vol.Coerce(int), vol.Range(min=1000, max=10000)),
+            }
+        )
+        return self.async_show_form(
+            step_id="init", data_schema=schema, errors=errors
         )
