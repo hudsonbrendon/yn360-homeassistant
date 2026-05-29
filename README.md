@@ -26,8 +26,18 @@ automatically via `manifest.json` `requirements`.
 - 💡 **On / off**
 - 🔆 **Brightness** (0–100%)
 - 🎨 **RGB colour**
-- 🌡️ **White colour temperature** — 3200 K (warm) to 5500 K (cool), the light's
-  bi-colour range.
+- 🌡️ **White colour temperature** — 3200 K (warm) to 5600 K (cool), the light's
+  bi-colour range (customisable in the options).
+- 🌗 **Transitions** — software brightness fade via the `transition` parameter.
+- ♻️ **State restore** — last on/off, brightness and colour survive a restart
+  (the light has no feedback, so it's an `assumed_state` entity).
+- 📶 **Availability tracking** — goes unavailable when out of range, recovers
+  automatically, and exposes an optional diagnostic **signal-strength (RSSI)**
+  sensor.
+- 🔁 **Resilient commands** — Bluetooth commands are retried with a backoff on
+  transient errors.
+- ⚙️ **Options** — persistent vs per-command Bluetooth connection, and a custom
+  colour-temperature range.
 - 📡 **Works through ESPHome Bluetooth proxies** — it uses Home Assistant's shared
   Bluetooth stack, so the light doesn't need to be near the HA host, only near a
   proxy.
@@ -77,7 +87,18 @@ automations, scripts, or the `light.turn_on` / `light.turn_off` services) you ca
 | Power | On / off |
 | Brightness | `brightness` / `brightness_pct` |
 | Colour | `rgb_color` |
-| Colour temperature | `color_temp_kelvin` (3200–5500 K) |
+| Colour temperature | `color_temp_kelvin` (3200–5600 K, configurable) |
+| Transition | `transition` (seconds, software fade) |
+
+## Options
+
+After adding the device, open **Settings → Devices & Services → Yongnuo YN360 →
+Configure**:
+
+| Option | Default | What it does |
+|---|---|---|
+| Keep the Bluetooth connection open | Off | When on, holds a persistent connection for lower latency. Trade-off: it occupies a Bluetooth slot and blocks the official Yongnuo app. Leave off to connect only while sending a command. |
+| Minimum / maximum colour temperature | 3200 / 5600 K | Override the white range exposed to Home Assistant. |
 
 Example automation:
 
@@ -107,6 +128,19 @@ ignores write-without-response).
 - Bluetooth LE allows **one client at a time** — close the official Yongnuo app
   while Home Assistant is controlling the light.
 - RGB and white are mutually exclusive modes; setting one switches the active mode.
+
+## Roadmap
+
+The device also has hardware features not yet exposed here because they require
+reverse-engineering the BLE command frames in the
+[`yn360-ble`](https://github.com/hudsonbrendon/yn360-ble) library first:
+
+- **Special effects / scenes** (lightning, sunrise, candle, police, TV,
+  fireworks, strobe…) — would map to Home Assistant's light `effect_list`.
+- **Green–magenta (GM) tint** adjustment for the white modes.
+
+These are blocked on the protocol library, not the integration; contributions of
+sniffed command frames are welcome there.
 
 ## Contributing
 

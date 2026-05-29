@@ -14,5 +14,30 @@
       "no_devices_found": "Nenhum dispositivo Yongnuo YN360 encontrado.",
       "already_configured": "O dispositivo já está configurado."
     }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opções do Yongnuo YN360",
+        "data": {
+          "persistent_connection": "Manter a conexão Bluetooth aberta",
+          "min_kelvin": "Temperatura de cor mínima (K)",
+          "max_kelvin": "Temperatura de cor máxima (K)"
+        },
+        "data_description": {
+          "persistent_connection": "Menor latência nos comandos, mas ocupa um canal Bluetooth e bloqueia o aplicativo oficial. Deixe desligado para conectar apenas ao enviar um comando.",
+          "min_kelvin": "Branco mais quente que a luz suporta (padrão 3200).",
+          "max_kelvin": "Branco mais frio que a luz suporta (padrão 5600)."
+        }
+      }
+    },
+    "error": {
+      "invalid_kelvin_range": "A temperatura de cor mínima deve ser menor que a máxima."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "signal_strength": { "name": "Intensidade do sinal" }
+    }
   }
 }
