@@ -48,6 +48,32 @@ def _patched_device(device: AsyncMock | None = None):
         yield device
 
 
+async def test_make_device_supplies_a_client_factory(hass):
+    """The entity hands YN360Light a factory so connections go through
+    bleak_retry_connector.establish_connection (connection-slot aware, and it
+    caches GATT services -- both matter through an ESPHome Bluetooth proxy)."""
+    with _patched_device():
+        entity_id = await _setup(hass)
+    entity = hass.data["entity_components"]["light"].get_entity(entity_id)
+
+    captured: dict = {}
+
+    def fake_light(device, client_factory=None):
+        captured["device"] = device
+        captured["factory"] = client_factory
+        return AsyncMock()
+
+    with patch(
+        "custom_components.yongnuo_yn360.light.YN360Light", side_effect=fake_light
+    ), patch(
+        "custom_components.yongnuo_yn360.light.bluetooth.async_ble_device_from_address",
+        return_value=object(),
+    ):
+        entity._make_device()
+
+    assert captured["factory"] is not None
+
+
 async def test_turn_on_rgb_calls_set_rgb(hass):
     with _patched_device() as device:
         entity_id = await _setup(hass)

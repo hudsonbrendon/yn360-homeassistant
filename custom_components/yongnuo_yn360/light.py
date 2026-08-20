@@ -6,7 +6,8 @@ import asyncio
 from collections.abc import Awaitable, Callable
 from typing import Any
 
-from bleak_retry_connector import BLEAK_RETRY_EXCEPTIONS
+from bleak import BleakClient
+from bleak_retry_connector import BLEAK_RETRY_EXCEPTIONS, establish_connection
 from homeassistant.components import bluetooth
 from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
@@ -170,7 +171,16 @@ class YN360LightEntity(LightEntity, RestoreEntity):
         )
         if ble_device is None:
             raise HomeAssistantError(f"YN360 {self._address} is not in range")
-        return YN360Light(ble_device)
+
+        def _connect() -> Awaitable[BleakClient]:
+            # establish_connection manages the adapter's connection slots and
+            # caches GATT services; both matter when the light is reached
+            # through an ESPHome Bluetooth proxy rather than a local adapter.
+            return establish_connection(
+                BleakClient, ble_device, self._address, max_attempts=2
+            )
+
+        return YN360Light(ble_device, client_factory=_connect)
 
     async def _async_close(self) -> None:
         """Disconnect and forget any cached device."""

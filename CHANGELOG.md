@@ -6,6 +6,27 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-08-20
+
+### Changed
+- **Connections now go through `bleak-retry-connector`'s `establish_connection`.**
+  Previously the integration only borrowed that library's exception list while
+  opening connections itself. Going through `establish_connection` adds
+  connection-slot management and GATT service caching, which matter most when
+  the light is reached through an ESPHome Bluetooth proxy rather than a local
+  adapter.
+- **Discovery also matches the advertised service UUID**, not just the device
+  name, so a unit advertising an unexpected name is still discovered. The
+  YN360 III Pro was confirmed to advertise `f000aa60-…` in its advertisement
+  packet.
+- Requires `yn360-ble` 0.2.0.
+
+### Notes
+- The device was verified to emit **no** BLE notifications — not for app-sent
+  commands, and not when its physical knobs are turned. There is no state
+  feedback to read, so the light stays an `assumed_state` entity. It also has
+  no battery GATT service, so a battery level sensor is not possible.
+
 ## [0.2.0] - 2026-05-28
 
 ### Added

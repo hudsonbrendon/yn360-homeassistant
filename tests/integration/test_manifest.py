@@ -9,5 +9,11 @@ def test_manifest_is_valid():
     assert data["config_flow"] is True
     assert data["iot_class"] == "assumed_state"
     assert "bluetooth_adapters" in data["dependencies"]
-    assert data["bluetooth"] == [{"local_name": "YN360*"}]
+    # The III Pro advertises the service UUID as well as the name (confirmed
+    # against hardware, see yn360-ble HARDWARE.md), so discovery matches on
+    # both -- a unit advertising an unexpected name is still found.
+    assert data["bluetooth"] == [
+        {"local_name": "YN360*"},
+        {"service_uuid": "f000aa60-0451-4000-b000-000000000000"},
+    ]
     assert any(r.startswith("yn360-ble") for r in data["requirements"])
