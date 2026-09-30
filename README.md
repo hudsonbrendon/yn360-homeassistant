@@ -53,9 +53,9 @@ automatically via `manifest.json` `requirements`.
 
 ## Installation
 
-### HACS (recommended)
+### [HACS](https://hacs.xyz/) (recommended)
 
-1. In Home Assistant, open **HACS → ⋮ (top right) → Custom repositories**.
+1. In Home Assistant, open **[HACS](https://hacs.xyz/) → ⋮ (top right) → Custom repositories**.
 2. Add the repository URL `https://github.com/hudsonbrendon/yn360-homeassistant`
    and choose the **Integration** category.
 3. Search for **Yongnuo YN360** in HACS, install it, and **restart Home Assistant**.
