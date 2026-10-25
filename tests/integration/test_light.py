@@ -8,8 +8,12 @@ from pytest_homeassistant_custom_component.common import (
     mock_restore_cache,
 )
 
+from yn360 import WhiteState
+
 from custom_components.yongnuo_yn360.const import (
+    CONF_CHANNEL,
     CONF_PERSISTENT_CONNECTION,
+    CONF_POLL_INTERVAL,
     DOMAIN,
 )
 
@@ -34,8 +38,13 @@ async def _setup(hass, options: dict | None = None) -> str:
 
 @contextmanager
 def _patched_device(device: AsyncMock | None = None):
-    """Patch YN360Light, the BLE lookup, and report the device as present."""
+    """Patch YN360Light, the BLE lookup, and report the device as present.
+
+    The status query answers None (no reply) unless the test configures it.
+    """
     device = device or AsyncMock()
+    if not isinstance(device.query_status.return_value, (WhiteState, type(None))):
+        device.query_status.return_value = None
     with patch(
         "custom_components.yongnuo_yn360.light.YN360Light", return_value=device
     ), patch(
@@ -103,14 +112,84 @@ async def test_turn_on_color_temp_calls_set_white(hass):
     assert device.set_white.await_args.args[0] == 4500
 
 
-async def test_turn_off_calls_turn_off(hass):
+async def test_turn_off_uses_standby_on_configured_channel(hass):
     with _patched_device() as device:
-        entity_id = await _setup(hass)
+        entity_id = await _setup(hass, {CONF_CHANNEL: 3})
         await hass.services.async_call(
             "light", "turn_off", {"entity_id": entity_id}, blocking=True
         )
-    device.turn_off.assert_awaited_once()
+    device.standby.assert_awaited_once_with(3)
+    device.turn_off.assert_not_awaited()
     assert hass.states.get(entity_id).state == "off"
+
+
+async def test_white_uses_configured_channel(hass):
+    with _patched_device() as device:
+        entity_id = await _setup(hass, {CONF_CHANNEL: 2})
+        await hass.services.async_call(
+            "light",
+            "turn_on",
+            {"entity_id": entity_id, "color_temp_kelvin": 4500},
+            blocking=True,
+        )
+    assert device.set_white.await_args.kwargs["channel"] == 2
+
+
+async def test_poll_adopts_knob_change(hass):
+    """A status reply that differs from what was sent (knobs turned) wins."""
+    device = AsyncMock()
+    device.query_status.return_value = WhiteState(1, 0x51, 0x63, on=True)
+    with _patched_device(device):
+        entity_id = await _setup(hass)
+    state = hass.states.get(entity_id)
+    assert state.state == "on"
+    assert state.attributes["color_mode"] == "color_temp"
+    assert state.attributes["brightness"] == 255
+    assert 4200 < state.attributes["color_temp_kelvin"] < 4300
+    assert state.attributes.get("assumed_state") is None
+
+
+async def test_poll_reports_standby_as_off(hass):
+    mock_restore_cache(hass, (State("light.yn360iii_pro", "on", {}),))
+    device = AsyncMock()
+    device.query_status.return_value = WhiteState(1, 50, 50, on=False)
+    with _patched_device(device):
+        entity_id = await _setup(hass)
+    assert hass.states.get(entity_id).state == "off"
+
+
+async def test_poll_matching_last_command_keeps_rgb(hass):
+    """RGB is never reported, so a reply equal to the last white frame sent
+    must not flip an RGB light back to white."""
+    device = AsyncMock()
+    with _patched_device(device):
+        entity_id = await _setup(hass)
+        await hass.services.async_call(
+            "light",
+            "turn_on",
+            {"entity_id": entity_id, "color_temp_kelvin": 5500, "brightness": 255},
+            blocking=True,
+        )
+        await hass.services.async_call(
+            "light",
+            "turn_on",
+            {"entity_id": entity_id, "rgb_color": [255, 0, 0]},
+            blocking=True,
+        )
+        device.query_status.return_value = WhiteState(1, 99, 0, on=True)
+        entity = hass.data["entity_components"]["light"].get_entity(entity_id)
+        await entity._async_poll()
+        device.query_status.assert_awaited()
+    state = hass.states.get(entity_id)
+    assert state.attributes["color_mode"] == "rgb"
+    assert state.attributes["rgb_color"] == (255, 0, 0)
+
+
+async def test_polling_disabled_is_assumed_state(hass):
+    with _patched_device() as device:
+        entity_id = await _setup(hass, {CONF_POLL_INTERVAL: 0})
+    device.query_status.assert_not_awaited()
+    assert hass.states.get(entity_id).attributes["assumed_state"] is True
 
 
 async def test_default_disconnects_after_command(hass):

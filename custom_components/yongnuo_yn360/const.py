@@ -21,7 +21,17 @@ CONF_PERSISTENT_CONNECTION = "persistent_connection"
 CONF_MIN_KELVIN = "min_kelvin"
 CONF_MAX_KELVIN = "max_kelvin"
 
+CONF_CHANNEL = "channel"
+CONF_POLL_INTERVAL = "poll_interval"
+
 DEFAULT_PERSISTENT_CONNECTION = False
+
+# Group channel the light is set to (1-8); it ignores frames for other channels.
+DEFAULT_CHANNEL = 1
+
+# Seconds between status queries. The light reports its white state (including
+# physical knob changes) and on/standby only when asked; 0 disables polling.
+DEFAULT_POLL_INTERVAL = 60
 
 # Connection retry policy. Each BLE command opens a short-lived connection
 # (unless persistent), which can fail transiently when the light is busy or the

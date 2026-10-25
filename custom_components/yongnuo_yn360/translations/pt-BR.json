@@ -22,12 +22,16 @@
         "data": {
           "persistent_connection": "Manter a conexão Bluetooth aberta",
           "min_kelvin": "Temperatura de cor mínima (K)",
-          "max_kelvin": "Temperatura de cor máxima (K)"
+          "max_kelvin": "Temperatura de cor máxima (K)",
+          "channel": "Canal de grupo",
+          "poll_interval": "Intervalo de consulta de estado (s)"
         },
         "data_description": {
           "persistent_connection": "Menor latência nos comandos, mas ocupa um canal Bluetooth e bloqueia o aplicativo oficial. Deixe desligado para conectar apenas ao enviar um comando.",
           "min_kelvin": "Branco mais quente que a luz suporta (padrão 3200).",
-          "max_kelvin": "Branco mais frio que a luz suporta (padrão 5600)."
+          "max_kelvin": "Branco mais frio que a luz suporta (padrão 5600).",
+          "channel": "Canal de grupo configurado na própria luz (1–8). A luz ignora comandos de outros canais.",
+          "poll_interval": "Com que frequência perguntar o estado à luz, captando mudanças feitas nos botões dela. Cada consulta conecta rapidamente via Bluetooth; 0 desativa."
         }
       }
     },

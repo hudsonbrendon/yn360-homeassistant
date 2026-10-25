@@ -22,12 +22,16 @@
         "data": {
           "persistent_connection": "Keep the Bluetooth connection open",
           "min_kelvin": "Minimum colour temperature (K)",
-          "max_kelvin": "Maximum colour temperature (K)"
+          "max_kelvin": "Maximum colour temperature (K)",
+          "channel": "Group channel",
+          "poll_interval": "Status poll interval (s)"
         },
         "data_description": {
           "persistent_connection": "Lower command latency, but holds a Bluetooth slot and blocks the official app. Leave off to connect only while sending a command.",
           "min_kelvin": "Warmest white the light supports (default 3200).",
-          "max_kelvin": "Coolest white the light supports (default 5600)."
+          "max_kelvin": "Coolest white the light supports (default 5600).",
+          "channel": "Group channel the light is set to on its own controls (1–8). The light ignores commands for other channels.",
+          "poll_interval": "How often to ask the light for its state, picking up changes made on its knobs. Each poll briefly connects over Bluetooth; 0 turns polling off."
         }
       }
     },

@@ -6,6 +6,24 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-25
+
+### Added
+- **Real state from the light.** The entity polls the light's status (every
+  60 s by default) and adopts it when it differs from what Home Assistant last
+  sent — so changes made on the light's knobs show up. RGB isn't reported by the
+  light and is kept as last commanded. The entity is no longer `assumed_state`
+  (unless polling is turned off).
+- Options: **group channel** (1–8; the light ignores other channels) and **status
+  poll interval** (0 disables polling).
+
+### Changed
+- Turning off now sends standby (`0xEE`) instead of off (`0xA3`): it also blacks
+  out RGB and is reported back as off.
+- Requires `yn360-ble` 0.3.0 (status query, standby, 0–99 white scale), whose
+  protocol was verified by reverse-engineering the official YONGNUO app.
+- `iot_class` is now `local_polling`.
+
 ## [0.3.0] - 2026-08-20
 
 ### Changed

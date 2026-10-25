@@ -7,7 +7,7 @@ def test_manifest_is_valid():
     data = json.loads(path.read_text())
     assert data["domain"] == "yongnuo_yn360"
     assert data["config_flow"] is True
-    assert data["iot_class"] == "assumed_state"
+    assert data["iot_class"] == "local_polling"
     assert "bluetooth_adapters" in data["dependencies"]
     # The III Pro advertises the service UUID as well as the name (confirmed
     # against hardware, see yn360-ble HARDWARE.md), so discovery matches on

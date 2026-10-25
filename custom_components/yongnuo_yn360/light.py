@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Awaitable, Callable
-from typing import Any
+from datetime import timedelta
+from typing import Any, TypeVar
 
 from bleak import BleakClient
 from bleak_retry_connector import BLEAK_RETRY_EXCEPTIONS, establish_connection
@@ -23,18 +24,24 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.restore_state import RestoreEntity
 
-from yn360 import YN360Light
+from yn360 import WhiteState, YN360Light, cool_warm_to_kelvin
+from yn360.protocol import kelvin_to_cool_warm
 
 from .const import (
+    CONF_CHANNEL,
     CONF_MAX_KELVIN,
     CONF_MIN_KELVIN,
     CONF_PERSISTENT_CONNECTION,
+    CONF_POLL_INTERVAL,
     CONNECT_ATTEMPTS,
+    DEFAULT_CHANNEL,
     DEFAULT_MAX_KELVIN,
     DEFAULT_MIN_KELVIN,
     DEFAULT_PERSISTENT_CONNECTION,
+    DEFAULT_POLL_INTERVAL,
     DOMAIN,
     LOGGER,
     MANUFACTURER,
@@ -43,6 +50,8 @@ from .const import (
     TRANSITION_MAX_STEPS,
     TRANSITION_STEP_SECONDS,
 )
+
+_T = TypeVar("_T")
 
 
 async def async_setup_entry(
@@ -57,8 +66,10 @@ async def async_setup_entry(
 class YN360LightEntity(LightEntity, RestoreEntity):
     """A Yongnuo YN360 RGB / bi-colour BLE light.
 
-    The light has no state feedback over BLE, so it is an ``assumed_state``
-    entity whose last commanded state is restored across restarts. Commands are
+    The light answers a status query with its white state (on/standby and the
+    cool/warm levels, following the physical knobs) but never reports RGB, so
+    the entity polls that status and adopts it whenever it differs from what was
+    last commanded; otherwise the last commanded state stands. Commands are
     sent over Home Assistant's shared Bluetooth stack (so they also work through
     ESPHome BT proxies) and retried with a backoff on transient failures. By
     default each command opens a short-lived connection; a persistent connection
@@ -67,7 +78,6 @@ class YN360LightEntity(LightEntity, RestoreEntity):
 
     _attr_has_entity_name = True
     _attr_name = None
-    _attr_assumed_state = True
     _attr_supported_color_modes = {ColorMode.RGB, ColorMode.COLOR_TEMP}
     _attr_supported_features = LightEntityFeature.TRANSITION
 
@@ -91,6 +101,14 @@ class YN360LightEntity(LightEntity, RestoreEntity):
         self._persistent = entry.options.get(
             CONF_PERSISTENT_CONNECTION, DEFAULT_PERSISTENT_CONNECTION
         )
+        self._channel = entry.options.get(CONF_CHANNEL, DEFAULT_CHANNEL)
+        self._poll_interval = entry.options.get(
+            CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL
+        )
+        self._attr_assumed_state = not self._poll_interval
+        # Last white/standby state sent (or reported); a poll reply that differs
+        # from it means someone used the knobs or another app.
+        self._expected: WhiteState | None = None
         self._device: YN360Light | None = None
         self._lock = asyncio.Lock()
         self._attr_available = False
@@ -141,6 +159,53 @@ class YN360LightEntity(LightEntity, RestoreEntity):
                 connectable=True,
             )
         )
+        if self._poll_interval:
+            self.async_on_remove(
+                async_track_time_interval(
+                    self.hass,
+                    self._async_poll,
+                    timedelta(seconds=self._poll_interval),
+                    name=f"{DOMAIN} {self._address} status",
+                )
+            )
+            self._entry.async_create_background_task(
+                self.hass, self._async_poll(), f"{DOMAIN} {self._address} first poll"
+            )
+
+    async def _async_poll(self, _now: Any = None) -> None:
+        """Refresh from the light's status reply; failures are only logged."""
+        if self._lock.locked() or not self._attr_available:
+            return
+        try:
+            await self.async_update()
+        except HomeAssistantError as err:
+            LOGGER.debug("YN360 %s status poll failed: %s", self._address, err)
+            return
+        self.async_write_ha_state()
+
+    async def async_update(self) -> None:
+        """Query the light and adopt its white state if it changed externally."""
+        status = await self._async_run(lambda device: device.query_status())
+        if status is None or status == self._expected:
+            return
+        first = self._expected is None
+        self._expected = status
+        if not status.on:
+            self._attr_is_on = False
+            return
+        # On the first reply keep a restored RGB state: RGB is never reported,
+        # so an "on" white reply cannot tell RGB and white apart.
+        if first and self._attr_is_on and self._attr_color_mode == ColorMode.RGB:
+            return
+        self._attr_is_on = True
+        self._attr_color_mode = ColorMode.COLOR_TEMP
+        if (white := cool_warm_to_kelvin(status.cool, status.warm)) is not None:
+            kelvin, ratio = white
+            self._attr_color_temp_kelvin = min(
+                self._attr_max_color_temp_kelvin,
+                max(self._attr_min_color_temp_kelvin, kelvin),
+            )
+            self._attr_brightness = max(1, round(ratio * 255))
 
     async def async_will_remove_from_hass(self) -> None:
         """Drop any persistent connection when the entity goes away."""
@@ -191,9 +256,7 @@ class YN360LightEntity(LightEntity, RestoreEntity):
                 pass
             self._device = None
 
-    async def _async_run(
-        self, action: Callable[[YN360Light], Awaitable[None]]
-    ) -> None:
+    async def _async_run(self, action: Callable[[YN360Light], Awaitable[_T]]) -> _T:
         """Run ``action`` against the device, with retries and backoff.
 
         A fresh device/connection is built for each attempt so a half-open BLE
@@ -205,7 +268,7 @@ class YN360LightEntity(LightEntity, RestoreEntity):
             for attempt in range(CONNECT_ATTEMPTS):
                 device = self._device or self._make_device()
                 try:
-                    await action(device)
+                    result = await action(device)
                 except BLEAK_RETRY_EXCEPTIONS as err:
                     last_exc = err
                     LOGGER.debug(
@@ -229,7 +292,7 @@ class YN360LightEntity(LightEntity, RestoreEntity):
                     else:
                         await device.disconnect()
                         self._device = None
-                    return
+                    return result
             raise HomeAssistantError(
                 f"YN360 {self._address} command failed after {CONNECT_ATTEMPTS} "
                 f"attempts: {last_exc}"
@@ -253,7 +316,7 @@ class YN360LightEntity(LightEntity, RestoreEntity):
         def _emit(device: YN360Light, brightness: int) -> Awaitable[None]:
             ratio = brightness / 255
             if mode == ColorMode.COLOR_TEMP:
-                return device.set_white(kelvin, ratio)
+                return device.set_white(kelvin, ratio, channel=self._channel)
             return device.set_rgb(*rgb, brightness=ratio)
 
         if transition and transition > 0:
@@ -280,6 +343,9 @@ class YN360LightEntity(LightEntity, RestoreEntity):
         self._attr_color_mode = mode
         if mode == ColorMode.COLOR_TEMP:
             self._attr_color_temp_kelvin = kelvin
+            self._expected = WhiteState(
+                self._channel, *kelvin_to_cool_warm(kelvin, target_brightness / 255)
+            )
         else:
             self._attr_rgb_color = rgb
         self._attr_brightness = target_brightness
@@ -306,9 +372,11 @@ class YN360LightEntity(LightEntity, RestoreEntity):
                     level = round(start * (steps - step) / steps)
                     ratio = max(0, level) / 255
                     if level <= 0:
-                        await device.turn_off()
+                        await device.standby(self._channel)
                     elif mode == ColorMode.COLOR_TEMP:
-                        await device.set_white(self._attr_color_temp_kelvin, ratio)
+                        await device.set_white(
+                            self._attr_color_temp_kelvin, ratio, channel=self._channel
+                        )
                     else:
                         await device.set_rgb(*self._attr_rgb_color, brightness=ratio)
                     if step < steps:
@@ -316,7 +384,11 @@ class YN360LightEntity(LightEntity, RestoreEntity):
 
             await self._async_run(_faded)
         else:
-            await self._async_run(lambda device: device.turn_off())
+            # Standby (0xEE) rather than off (0xA3): it also blacks out RGB and
+            # is what the status query reports as off.
+            await self._async_run(lambda device: device.standby(self._channel))
 
+        if self._expected is not None:
+            self._expected = self._expected._replace(on=False)
         self._attr_is_on = False
         self.async_write_ha_state()

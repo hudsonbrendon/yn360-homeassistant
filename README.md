@@ -29,15 +29,18 @@ automatically via `manifest.json` `requirements`.
 - 🌡️ **White colour temperature** — 3200 K (warm) to 5600 K (cool), the light's
   bi-colour range (customisable in the options).
 - 🌗 **Transitions** — software brightness fade via the `transition` parameter.
-- ♻️ **State restore** — last on/off, brightness and colour survive a restart
-  (the light has no feedback, so it's an `assumed_state` entity).
+- 📡 **Real state** — the light is polled for its status (every 60 s by
+  default), so on/off, white level and colour temperature follow the light's own
+  knobs too. RGB isn't reported by the light, so an RGB state is kept as last
+  commanded.
+- ♻️ **State restore** — last on/off, brightness and colour survive a restart.
 - 📶 **Availability tracking** — goes unavailable when out of range, recovers
   automatically, and exposes an optional diagnostic **signal-strength (RSSI)**
   sensor.
 - 🔁 **Resilient commands** — Bluetooth commands are retried with a backoff on
   transient errors.
-- ⚙️ **Options** — persistent vs per-command Bluetooth connection, and a custom
-  colour-temperature range.
+- ⚙️ **Options** — persistent vs per-command Bluetooth connection, group channel,
+  status poll interval and a custom colour-temperature range.
 - 📡 **Works through ESPHome Bluetooth proxies** — it uses Home Assistant's shared
   Bluetooth stack, so the light doesn't need to be near the HA host, only near a
   proxy.
@@ -98,6 +101,8 @@ Configure**:
 | Option | Default | What it does |
 |---|---|---|
 | Keep the Bluetooth connection open | Off | When on, holds a persistent connection for lower latency. Trade-off: it occupies a Bluetooth slot and blocks the official Yongnuo app. Leave off to connect only while sending a command. |
+| Group channel | 1 | Channel (1–8) the light is set to on its own controls. The light ignores commands for any other channel. |
+| Status poll interval | 60 s | How often to ask the light for its state (picks up knob changes). Each poll briefly connects over Bluetooth; `0` turns polling off and makes the entity `assumed_state`. |
 | Minimum / maximum colour temperature | 3200 / 5600 K | Override the white range exposed to Home Assistant. |
 
 Example automation:
@@ -118,29 +123,27 @@ work — connecting, building the command frames, RGB/white conversions — live
 the [`yn360-ble`](https://github.com/hudsonbrendon/yn360-ble) Python library and
 is pulled in as a dependency. The light is controlled with the 6-byte BLE command
 frames documented in that library, using acknowledged writes (the YN360 III Pro
-ignores write-without-response).
+ignores write-without-response). The protocol was confirmed by reverse-engineering
+the official YONGNUO app's native command library; see the library's
+`HARDWARE.md`.
+
+Turning the light off sends *standby* (`0xEE`), which also blacks out RGB and is
+what the status reply reports as off.
 
 ## Limitations
 
-- The light has **no state feedback** over Bluetooth, so the entity is
-  `assumed_state` — Home Assistant shows the last commanded state, which may drift
-  if the light is changed by its physical buttons or another app.
+- State feedback covers **white mode only**: the light reports on/standby and its
+  white levels, but not RGB. Changes are picked up at the next poll, not instantly
+  (the light pushes nothing by itself).
 - Bluetooth LE allows **one client at a time** — close the official Yongnuo app
   while Home Assistant is controlling the light.
 - RGB and white are mutually exclusive modes; setting one switches the active mode.
 
-## Roadmap
+## Not supported by the hardware
 
-The device also has hardware features not yet exposed here because they require
-reverse-engineering the BLE command frames in the
-[`yn360-ble`](https://github.com/hudsonbrendon/yn360-ble) library first:
-
-- **Special effects / scenes** (lightning, sunrise, candle, police, TV,
-  fireworks, strobe…) — would map to Home Assistant's light `effect_list`.
-- **Green–magenta (GM) tint** adjustment for the white modes.
-
-These are blocked on the protocol library, not the integration; contributions of
-sniffed command frames are welcome there.
+Reverse-engineering the official app showed its effects, HSI, GM tint and music
+modes use a newer frame format that the YN360 III Pro ignores, and its legacy
+effect frame did nothing on this light either — so there is no `effect_list`.
 
 ## Contributing
 

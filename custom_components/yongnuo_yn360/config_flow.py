@@ -20,12 +20,16 @@ import voluptuous as vol
 from yn360.const import DEVICE_NAME_PREFIX, SERVICE_UUID
 
 from .const import (
+    CONF_CHANNEL,
     CONF_MAX_KELVIN,
     CONF_MIN_KELVIN,
     CONF_PERSISTENT_CONNECTION,
+    CONF_POLL_INTERVAL,
+    DEFAULT_CHANNEL,
     DEFAULT_MAX_KELVIN,
     DEFAULT_MIN_KELVIN,
     DEFAULT_PERSISTENT_CONNECTION,
+    DEFAULT_POLL_INTERVAL,
     DOMAIN,
 )
 
@@ -109,7 +113,7 @@ class YN360ConfigFlow(ConfigFlow, domain=DOMAIN):
 
 
 class YN360OptionsFlow(OptionsFlow):
-    """Handle YN360 options: connection behaviour and colour-temperature range."""
+    """Handle YN360 options: connection, group channel, polling and kelvin range."""
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
@@ -132,6 +136,14 @@ class YN360OptionsFlow(OptionsFlow):
                         CONF_PERSISTENT_CONNECTION, DEFAULT_PERSISTENT_CONNECTION
                     ),
                 ): bool,
+                vol.Required(
+                    CONF_CHANNEL,
+                    default=options.get(CONF_CHANNEL, DEFAULT_CHANNEL),
+                ): vol.All(vol.Coerce(int), vol.Range(min=1, max=8)),
+                vol.Required(
+                    CONF_POLL_INTERVAL,
+                    default=options.get(CONF_POLL_INTERVAL, DEFAULT_POLL_INTERVAL),
+                ): vol.All(vol.Coerce(int), vol.Range(min=0, max=3600)),
                 vol.Required(
                     CONF_MIN_KELVIN,
                     default=options.get(CONF_MIN_KELVIN, DEFAULT_MIN_KELVIN),
