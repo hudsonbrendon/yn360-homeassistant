@@ -6,6 +6,13 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-10-25
+
+### Fixed
+- The entity was also polled by Home Assistant's default 30 s timer on top of
+  its own status poll, doubling Bluetooth connections. It now polls only on the
+  configured interval. Each status reply is logged at debug level.
+
 ## [0.4.0] - 2026-10-25
 
 ### Added

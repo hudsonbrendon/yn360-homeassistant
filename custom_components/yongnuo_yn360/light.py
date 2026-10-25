@@ -78,6 +78,8 @@ class YN360LightEntity(LightEntity, RestoreEntity):
 
     _attr_has_entity_name = True
     _attr_name = None
+    # Polled on our own (configurable) timer, not Home Assistant's 30 s default.
+    _attr_should_poll = False
     _attr_supported_color_modes = {ColorMode.RGB, ColorMode.COLOR_TEMP}
     _attr_supported_features = LightEntityFeature.TRANSITION
 
@@ -186,6 +188,7 @@ class YN360LightEntity(LightEntity, RestoreEntity):
     async def async_update(self) -> None:
         """Query the light and adopt its white state if it changed externally."""
         status = await self._async_run(lambda device: device.query_status())
+        LOGGER.debug("YN360 %s status: %s", self._address, status)
         if status is None or status == self._expected:
             return
         first = self._expected is None
