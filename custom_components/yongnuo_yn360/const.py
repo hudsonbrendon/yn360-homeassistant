@@ -11,7 +11,7 @@ LOGGER = logging.getLogger(__package__)
 MANUFACTURER = "Yongnuo"
 MODEL = "YN360 III Pro"
 
-# Bi-colour range of the YN360 III Pro. The official spec is 3200–5600 K; the
+# Bi-colour range of the YN360 III Pro. The official spec is 3200-5600 K; the
 # defaults below are used unless overridden in the options flow.
 DEFAULT_MIN_KELVIN = 3200
 DEFAULT_MAX_KELVIN = 5600

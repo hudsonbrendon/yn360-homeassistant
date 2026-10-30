@@ -12,15 +12,17 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import SIGNAL_STRENGTH_DECIBELS_MILLIWATT, EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 
 from .const import DOMAIN, MANUFACTURER, MODEL
+
+PARALLEL_UPDATES = 0
 
 
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up the YN360 diagnostic sensors from a config entry."""
     async_add_entities([YN360RSSISensor(entry)])
@@ -38,6 +40,7 @@ class YN360RSSISensor(SensorEntity):
     _attr_entity_registry_enabled_default = False
 
     def __init__(self, entry: ConfigEntry) -> None:
+        """Initialise the sensor from its config entry."""
         self._address = entry.unique_id
         self._attr_unique_id = f"{entry.unique_id}_rssi"
         self._attr_device_info = DeviceInfo(

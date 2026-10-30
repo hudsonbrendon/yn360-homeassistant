@@ -1,0 +1,92 @@
+rules:
+  # Bronze
+  action-setup:
+    status: exempt
+    comment: The integration does not register custom actions.
+  appropriate-polling: done
+  brands: todo
+  common-modules:
+    status: exempt
+    comment: No coordinator; each platform has a single stateless entity reading the shared Bluetooth stack.
+  config-flow: done
+  config-flow-test-coverage: done
+  dependency-transparency: done
+  docs-actions:
+    status: exempt
+    comment: The integration does not register custom actions.
+  docs-conditions:
+    status: exempt
+    comment: The integration does not provide conditions.
+  docs-high-level-description: done
+  docs-installation-instructions: done
+  docs-removal-instructions: todo
+  docs-triggers:
+    status: exempt
+    comment: The integration does not provide triggers.
+  entity-event-setup: done
+  entity-unique-id: done
+  has-entity-name: done
+  runtime-data:
+    status: exempt
+    comment: Nothing is stored per config entry; entities read options directly.
+  test-before-configure:
+    status: exempt
+    comment: Devices are added from Bluetooth discovery only; there is nothing to test beyond the advertisement.
+  test-before-setup: todo
+  unique-config-entry: done
+
+  # Silver
+  action-exceptions: done
+  config-entry-unloading: done
+  docs-configuration-parameters: done
+  docs-installation-parameters:
+    status: exempt
+    comment: Setup has no parameters; the device is picked from discovery.
+  entity-unavailable: done
+  integration-owner: done
+  log-when-unavailable: todo
+  parallel-updates: done
+  reauthentication-flow:
+    status: exempt
+    comment: The light has no authentication.
+  test-coverage: done
+
+  # Gold
+  devices: done
+  diagnostics: done
+  discovery: done
+  discovery-update-info: todo
+  docs-data-update: done
+  docs-examples: done
+  docs-known-limitations: done
+  docs-supported-devices: done
+  docs-supported-functions: done
+  docs-troubleshooting: todo
+  docs-use-cases: done
+  dynamic-devices:
+    status: exempt
+    comment: One config entry is one light.
+  entity-category: done
+  entity-device-class: done
+  entity-disabled-by-default: done
+  entity-translations: done
+  exception-translations: todo
+  icon-translations:
+    status: exempt
+    comment: Entities use device-class icons; no custom icons.
+  reconfiguration-flow:
+    status: exempt
+    comment: There is nothing to reconfigure; everything tunable is an option.
+  repair-issues:
+    status: exempt
+    comment: Failures surface through entity availability; nothing needs a repair flow.
+  stale-devices:
+    status: exempt
+    comment: One config entry is one light; removing the entry removes the device.
+
+  # Platinum
+  async-dependency: done
+  inject-websession:
+    status: exempt
+    comment: Bluetooth only; no HTTP session.
+  strict-typing: todo
