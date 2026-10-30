@@ -23,16 +23,19 @@ async def test_diagnostics_payload(hass):
     assert await hass.config_entries.async_setup(entry.entry_id)
     await hass.async_block_till_done()
 
-    with patch(
-        "custom_components.yongnuo_yn360.diagnostics.bluetooth.async_address_present",
-        return_value=True,
-    ), patch(
-        "custom_components.yongnuo_yn360.diagnostics.bluetooth.async_last_service_info",
-        return_value=SimpleNamespace(
-            rssi=-61,
-            name="YN360III_Pro",
-            source="local",
-            service_uuids=["abcd"],
+    with (
+        patch(
+            "custom_components.yongnuo_yn360.diagnostics.bluetooth.async_address_present",
+            return_value=True,
+        ),
+        patch(
+            "custom_components.yongnuo_yn360.diagnostics.bluetooth.async_last_service_info",
+            return_value=SimpleNamespace(
+                rssi=-61,
+                name="YN360III_Pro",
+                source="local",
+                service_uuids=["abcd"],
+            ),
         ),
     ):
         data = await async_get_config_entry_diagnostics(hass, entry)

@@ -5,9 +5,9 @@ from bleak.backends.scanner import AdvertisementData
 from homeassistant.components.bluetooth import BluetoothServiceInfoBleak
 from homeassistant.config_entries import SOURCE_BLUETOOTH
 from homeassistant.data_entry_flow import FlowResultType
+from yn360.const import SERVICE_UUID
 
 from custom_components.yongnuo_yn360.const import DOMAIN
-from yn360.const import SERVICE_UUID
 
 ADDRESS = "AA:BB:CC:DD:EE:FF"
 
@@ -45,9 +45,7 @@ async def test_bluetooth_discovery_creates_entry(hass):
     assert result["type"] is FlowResultType.FORM
     assert result["step_id"] == "bluetooth_confirm"
 
-    with patch(
-        "custom_components.yongnuo_yn360.async_setup_entry", return_value=True
-    ):
+    with patch("custom_components.yongnuo_yn360.async_setup_entry", return_value=True):
         result2 = await hass.config_entries.flow.async_configure(
             result["flow_id"], user_input={}
         )

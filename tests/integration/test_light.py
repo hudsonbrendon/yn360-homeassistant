@@ -7,7 +7,6 @@ from pytest_homeassistant_custom_component.common import (
     MockConfigEntry,
     mock_restore_cache,
 )
-
 from yn360 import WhiteState
 
 from custom_components.yongnuo_yn360.const import (
@@ -45,14 +44,16 @@ def _patched_device(device: AsyncMock | None = None):
     device = device or AsyncMock()
     if not isinstance(device.query_status.return_value, (WhiteState, type(None))):
         device.query_status.return_value = None
-    with patch(
-        "custom_components.yongnuo_yn360.light.YN360Light", return_value=device
-    ), patch(
-        "custom_components.yongnuo_yn360.light.bluetooth.async_ble_device_from_address",
-        return_value=object(),
-    ), patch(
-        "custom_components.yongnuo_yn360.light.bluetooth.async_address_present",
-        return_value=True,
+    with (
+        patch("custom_components.yongnuo_yn360.light.YN360Light", return_value=device),
+        patch(
+            "custom_components.yongnuo_yn360.light.bluetooth.async_ble_device_from_address",
+            return_value=object(),
+        ),
+        patch(
+            "custom_components.yongnuo_yn360.light.bluetooth.async_address_present",
+            return_value=True,
+        ),
     ):
         yield device
 
@@ -72,11 +73,14 @@ async def test_make_device_supplies_a_client_factory(hass):
         captured["factory"] = client_factory
         return AsyncMock()
 
-    with patch(
-        "custom_components.yongnuo_yn360.light.YN360Light", side_effect=fake_light
-    ), patch(
-        "custom_components.yongnuo_yn360.light.bluetooth.async_ble_device_from_address",
-        return_value=object(),
+    with (
+        patch(
+            "custom_components.yongnuo_yn360.light.YN360Light", side_effect=fake_light
+        ),
+        patch(
+            "custom_components.yongnuo_yn360.light.bluetooth.async_ble_device_from_address",
+            return_value=object(),
+        ),
     ):
         entity._make_device()
 
@@ -213,8 +217,9 @@ async def test_persistent_connection_keeps_link_open(hass):
 async def test_command_retries_on_transient_error(hass):
     device = AsyncMock()
     device.set_rgb.side_effect = [BleakError("boom"), BleakError("boom"), None]
-    with _patched_device(device), patch(
-        "custom_components.yongnuo_yn360.light.asyncio.sleep", AsyncMock()
+    with (
+        _patched_device(device),
+        patch("custom_components.yongnuo_yn360.light.asyncio.sleep", AsyncMock()),
     ):
         entity_id = await _setup(hass)
         await hass.services.async_call(
@@ -230,8 +235,9 @@ async def test_command_retries_on_transient_error(hass):
 async def test_command_gives_up_after_max_attempts(hass):
     device = AsyncMock()
     device.set_rgb.side_effect = BleakError("nope")
-    with _patched_device(device), patch(
-        "custom_components.yongnuo_yn360.light.asyncio.sleep", AsyncMock()
+    with (
+        _patched_device(device),
+        patch("custom_components.yongnuo_yn360.light.asyncio.sleep", AsyncMock()),
     ):
         entity_id = await _setup(hass)
         try:
@@ -247,8 +253,9 @@ async def test_command_gives_up_after_max_attempts(hass):
 
 
 async def test_transition_steps_brightness(hass):
-    with _patched_device() as device, patch(
-        "custom_components.yongnuo_yn360.light.asyncio.sleep", AsyncMock()
+    with (
+        _patched_device() as device,
+        patch("custom_components.yongnuo_yn360.light.asyncio.sleep", AsyncMock()),
     ):
         entity_id = await _setup(hass)
         await hass.services.async_call(

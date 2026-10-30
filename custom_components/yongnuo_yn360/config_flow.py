@@ -12,11 +12,10 @@ from homeassistant.config_entries import (
     ConfigEntry,
     ConfigFlow,
     ConfigFlowResult,
-    OptionsFlow,
+    OptionsFlowWithReload,
 )
 from homeassistant.core import callback
 import voluptuous as vol
-
 from yn360.const import DEVICE_NAME_PREFIX, SERVICE_UUID
 
 from .const import (
@@ -45,6 +44,7 @@ class YN360ConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Yongnuo YN360."""
 
     def __init__(self) -> None:
+        """Initialise the flow."""
         self._discovery: BluetoothServiceInfoBleak | None = None
         self._discovered: dict[str, BluetoothServiceInfoBleak] = {}
 
@@ -112,7 +112,7 @@ class YN360ConfigFlow(ConfigFlow, domain=DOMAIN):
         )
 
 
-class YN360OptionsFlow(OptionsFlow):
+class YN360OptionsFlow(OptionsFlowWithReload):
     """Handle YN360 options: connection, group channel, polling and kelvin range."""
 
     async def async_step_init(
@@ -154,6 +154,4 @@ class YN360OptionsFlow(OptionsFlow):
                 ): vol.All(vol.Coerce(int), vol.Range(min=1000, max=10000)),
             }
         )
-        return self.async_show_form(
-            step_id="init", data_schema=schema, errors=errors
-        )
+        return self.async_show_form(step_id="init", data_schema=schema, errors=errors)

@@ -36,12 +36,15 @@ async def test_rssi_sensor_reports_value_when_enabled(hass):
     registry = er.async_get(hass)
     registry.async_update_entity(SENSOR_ID, disabled_by=None)
 
-    with patch(
-        "custom_components.yongnuo_yn360.sensor.bluetooth.async_address_present",
-        return_value=True,
-    ), patch(
-        "custom_components.yongnuo_yn360.sensor.bluetooth.async_last_service_info",
-        return_value=SimpleNamespace(rssi=-57),
+    with (
+        patch(
+            "custom_components.yongnuo_yn360.sensor.bluetooth.async_address_present",
+            return_value=True,
+        ),
+        patch(
+            "custom_components.yongnuo_yn360.sensor.bluetooth.async_last_service_info",
+            return_value=SimpleNamespace(rssi=-57),
+        ),
     ):
         await hass.config_entries.async_reload(entry.entry_id)
         await hass.async_block_till_done()

@@ -1,0 +1,16 @@
+pytest-homeassistant-custom-component==0.13.375
+ruff
+yn360-ble==0.3.0
+# Home Assistant's bluetooth/usb stack, needed to load the bluetooth
+# integration under tests (pulled in automatically on Linux only).
+aiousbwatcher
+habluetooth
+bluetooth-adapters
+bluetooth-data-tools
+bleak
+bleak-retry-connector
+dbus-fast
+pyserial
+serialx
+bluetooth-auto-recovery
+pyudev; sys_platform == "linux"

@@ -23,10 +23,9 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.device_registry import DeviceInfo
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.entity_platform import AddConfigEntryEntitiesCallback
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.restore_state import RestoreEntity
-
 from yn360 import WhiteState, YN360Light, cool_warm_to_kelvin
 from yn360.protocol import kelvin_to_cool_warm
 
@@ -53,11 +52,13 @@ from .const import (
 
 _T = TypeVar("_T")
 
+PARALLEL_UPDATES = 1
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
+    async_add_entities: AddConfigEntryEntitiesCallback,
 ) -> None:
     """Set up the Yongnuo YN360 light from a config entry."""
     async_add_entities([YN360LightEntity(entry)])
@@ -84,6 +85,7 @@ class YN360LightEntity(LightEntity, RestoreEntity):
     _attr_supported_features = LightEntityFeature.TRANSITION
 
     def __init__(self, entry: ConfigEntry) -> None:
+        """Initialise the light from its config entry."""
         self._entry = entry
         self._address = entry.unique_id
         self._attr_unique_id = entry.unique_id

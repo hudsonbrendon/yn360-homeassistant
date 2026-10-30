@@ -6,6 +6,21 @@ to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.4.2] - 2026-10-30
+
+### Changed
+- Modernised for Home Assistant 2026.10 / Python 3.14: the options flow uses
+  `OptionsFlowWithReload` (no update listener), platforms declare
+  `PARALLEL_UPDATES` and use `AddConfigEntryEntitiesCallback`, and the manifest
+  lists `yn360` under `loggers`. Behaviour is unchanged.
+- `bleak-retry-connector` is no longer listed as a requirement: it is always
+  provided by Home Assistant's `bluetooth` integration, which this one depends
+  on, so a pinned copy could only conflict with core.
+- Added `quality_scale.yaml`, a `requirements_test.txt`, ruff configuration and
+  a release workflow; CI runs on Python 3.14 with
+  `pytest-homeassistant-custom-component` 0.13.375 (HA 2026.10).
+- HACS minimum Home Assistant version is now 2025.8.0 (`OptionsFlowWithReload`).
+
 ## [0.4.1] - 2026-10-25
 
 ### Fixed

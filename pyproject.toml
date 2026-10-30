@@ -2,41 +2,27 @@
 # (custom_components/yongnuo_yn360), not a Python package. The BLE protocol lives
 # in its own repo and on PyPI as `yn360-ble`
 # (https://github.com/hudsonbrendon/yn360-ble); the integration depends on it via
-# manifest.json `requirements`. This pyproject exists only to configure pytest and
-# the dev/test toolchain.
-[build-system]
-requires = ["setuptools>=68"]
-build-backend = "setuptools.build_meta"
+# manifest.json `requirements`. This pyproject only configures the dev/test
+# toolchain; test dependencies are in requirements_test.txt.
+[tool.ruff]
+target-version = "py314"
+line-length = 88
 
-[project]
-name = "yn360-homeassistant"
-version = "0.1.0"
-description = "Home Assistant integration for Yongnuo YN360 / YN360 III Pro LED lights over Bluetooth"
-readme = "README.md"
-license = { text = "MIT" }
-requires-python = ">=3.12"
-authors = [{ name = "Hudson Brendon", email = "contato.hudsonbrendon@gmail.com" }]
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "D", "ANN", "ASYNC", "RUF"]
+ignore = ["D203", "D213", "ANN401", "RUF012", "E501"]
 
-[project.optional-dependencies]
-test = [
-    "yn360-ble==0.3.0",
-    "pytest>=8.0",
-    "pytest-asyncio>=0.23",
-    # Pinned: this version transitively pins Home Assistant (2026.2.x), keeping
-    # CI in lockstep with the HA internals the bluetooth/usb test fixtures patch.
-    "pytest-homeassistant-custom-component==0.13.316",
-    # Pulled in transitively by Home Assistant's bluetooth stack on Linux, but
-    # required explicitly to run the HA bluetooth integration under tests on macOS.
-    "pyserial>=3.5",
-    "dbus-fast>=2.0",
-    # Home Assistant's `usb` component (a dependency of `bluetooth`) imports this.
-    "aiousbwatcher>=1.1.1",
-]
+[tool.ruff.lint.pydocstyle]
+convention = "google"
 
-# No Python package is shipped from this repo.
-[tool.setuptools]
-packages = []
+[tool.ruff.lint.isort]
+force-sort-within-sections = true
+combine-as-imports = true
+known-first-party = ["custom_components.yongnuo_yn360"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["D", "ANN", "RUF", "ASYNC"]
 
 [tool.pytest.ini_options]
-asyncio_mode = "auto"
 testpaths = ["tests"]
+asyncio_mode = "auto"
