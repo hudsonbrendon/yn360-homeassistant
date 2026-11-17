@@ -1,0 +1,14 @@
+pytest-homeassistant-custom-component>=0.13.375
+yn360-ble==0.3.0
+# Requirements of HA's bluetooth/usb components, loaded by the tests but not
+# shipped with the homeassistant wheel.
+aiousbwatcher
+serialx
+pyserial
+dbus-fast
+bleak
+bleak-retry-connector
+bluetooth-adapters
+bluetooth-auto-recovery
+bluetooth-data-tools
+habluetooth
