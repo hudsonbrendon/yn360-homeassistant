@@ -26,7 +26,6 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.restore_state import RestoreEntity
-
 from yn360 import WhiteState, YN360Light, cool_warm_to_kelvin
 from yn360.protocol import kelvin_to_cool_warm
 
@@ -80,7 +79,7 @@ class YN360LightEntity(LightEntity, RestoreEntity):
     _attr_name = None
     # Polled on our own (configurable) timer, not Home Assistant's 30 s default.
     _attr_should_poll = False
-    _attr_supported_color_modes = {ColorMode.RGB, ColorMode.COLOR_TEMP}
+    _attr_supported_color_modes = {ColorMode.RGB, ColorMode.COLOR_TEMP}  # noqa: RUF012
     _attr_supported_features = LightEntityFeature.TRANSITION
 
     def __init__(self, entry: ConfigEntry) -> None:
